@@ -1,0 +1,14 @@
+.pytest_cache/
+__pycache__/
+.venv/
+*.pyc
+.gocache/
+.gomodcache/
+*.egg-info/
+pytest-cache-files-*/
+bin/
+dist/
+coverage/
+htmlcov/
+.idea/
+.vscode/
