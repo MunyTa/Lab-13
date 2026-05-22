@@ -1,0 +1,86 @@
+services:
+  nats:
+    image: nats:2.11-alpine
+    ports:
+      - "4222:4222"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.65
+    ports:
+      - "16686:16686"
+      - "4318:4318"
+
+  orchestrator-api:
+    build:
+      context: .
+      dockerfile: infra/docker/python.Dockerfile
+    command: ["python", "-m", "uvicorn", "orchestrator.api:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      PYTHONPATH: /app/src
+      NATS_URL: nats://nats:4222
+      REDIS_URL: redis://redis:6379/0
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+    ports:
+      - "8000:8000"
+    depends_on:
+      - nats
+      - redis
+      - jaeger
+
+  resume-parser:
+    build:
+      context: .
+      dockerfile: infra/docker/go-agent.Dockerfile
+      args:
+        AGENT_DIR: ./agents/resume-parser
+    environment:
+      NATS_URL: nats://nats:4222
+      AGENT_SUBJECT: tasks.resume_parser
+      RESULT_SUBJECT: tasks.completed
+    depends_on:
+      - nats
+
+  candidate-matcher:
+    build:
+      context: .
+      dockerfile: infra/docker/go-agent.Dockerfile
+      args:
+        AGENT_DIR: ./agents/candidate-matcher
+    environment:
+      NATS_URL: nats://nats:4222
+      AGENT_SUBJECT: tasks.candidate_matcher
+      RESULT_SUBJECT: tasks.completed
+    depends_on:
+      - nats
+
+  interview-scheduler:
+    build:
+      context: .
+      dockerfile: infra/docker/go-agent.Dockerfile
+      args:
+        AGENT_DIR: ./agents/interview-scheduler
+    environment:
+      NATS_URL: nats://nats:4222
+      AGENT_SUBJECT: tasks.interview_scheduler
+      RESULT_SUBJECT: tasks.completed
+    depends_on:
+      - nats
+
+  feedback-agent:
+    build:
+      context: .
+      dockerfile: infra/docker/go-agent.Dockerfile
+      args:
+        AGENT_DIR: ./agents/feedback-agent
+    environment:
+      NATS_URL: nats://nats:4222
+      AGENT_SUBJECT: tasks.feedback_agent
+      RESULT_SUBJECT: tasks.completed
+    depends_on:
+      - nats
+

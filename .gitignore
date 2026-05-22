@@ -6,6 +6,7 @@ __pycache__/
 .gomodcache/
 *.egg-info/
 pytest-cache-files-*/
+logs/
 bin/
 dist/
 coverage/
